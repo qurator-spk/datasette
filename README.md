@@ -50,13 +50,19 @@ Die datasette-Instanz der Staatsbibliothek zu Berlin findet sich unter diesem Li
 [http://datasette.lx0246.sbb.spk-berlin.de/](http://datasette.lx0246.sbb.spk-berlin.de/)
 
 **Vorbemerkung:**
-Diese Datasette-Instanz ermöglicht SQL-Abfragen über fünf Tabellen: text, modsinfo, lang, entropy und fulltext_modsinfo.
+Diese Datasette-Instanz ermöglicht SQL-Abfragen über vier Datenbanken: 
 
-Eine weitere Tabelle (ark_metadata) ermöglicht die Analyse der Metadaten von 2,6 Millionen Titeln des Alten Realkatalogs der Staatsbibliothek zu Berlin.
+Die Datenbank DigiSam (mit den Untertabellen volltext, sprachinfo, modsinfo, volltext_mit_titel_und_ort) stellt eine Volltextdatenbannk dar, die aus den [digitalisierten Sammlungen der Staatsbibliothek zu Berlin](https://digital.staatsbibliothek-berlin.de/) generiert wurde.
 
-Die Tabelle [text](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/text) enthält fast fünf Millionen Seiten Volltexte von 28.909 Werken. Die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo) enthält Metadaten der von der Staatsbibliothek zu Berlin digitalisierten Werke. Die Tabelle [lang](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang) enthält automatisch bestimmte Angaben zur Sprache auf jeder Volltextseite sowie zur Konfidenz dieser Angabe (Erwartungsbereich). Die Tabelle [entropy](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/entropy) enthält Werte, mit der die Unsicherheit bemessen wurde, mit der die Sprache einer Volltextseite bestimmt wurde. Die Tabelle [fulltext_modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/fulltext_modsinfo) ermöglicht eine Visualisierung der Druckorte der digitalisierten Werte bzw. eine Recherche über Längen- und Breitengrade. Alle Tabellen enthalten eine Spalte mit Identifikatoren; hierfür wird die PPN genutzt, d.h die **P**ica **P**roduction **N**umber, die im deutschen Bibliothekssystem benutzt wird. PPNs sind eindeutige Identifikatoren, die auch für jedes Werk in den [Digitalisierten Sammlungen der Staatsbibliothek zu Berlin](https://digital.staatsbibliothek-berlin.de/) verwendet werden. Beispielsweise findet sich die PPN63354499X im Link zu diesem Werk https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN63354499X in den digitalisierten Sammlungen.
+Eine zweite Datenbank (ARK-MetaData) ermöglicht die Analyse der Metadaten von 2,6 Millionen Titeln des [Alten Realkatalogs](https://ark.staatsbibliothek-berlin.de/) der Staatsbibliothek zu Berlin.
 
-Im folgenden werden Beispiele für SQL-Abfragen präsentiert, die es den Nutzenden ermöglichen sollen, die Logik dieser Abfragen zu verstehen und selbst SQL-Abfragen zu formulieren. Grundsätzlich sind die SQL-Queries in der Tabelle ["fulltext"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext)" auszuführen. Die einzige Ausnahme bilden Volltextsuchen; vergleiche dazu die Ausführungen unten.
+Eine dritte Datenbank (DigiSam-Win-IBW) enthält sämtliche Metadaten der in den digitalisierten Sammlungen enthaltenen Werke (auch der Archivalien), aber aus einer anderen Datenquellen, nämlich dem Verbundkatalog K10plus; vergleiche dazu die Ausführungen unten.
+
+Die vierte Datenbank (_memory) macht Abfragen über unterschiedliche Datenbanken hinweg möglich. Man kann also z.B. die DigiSam-Win-IBW gegen die ARK-MetaData über einen gemeinsamen Identifikator joinen.
+
+Die Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) enthält fast fünf Millionen Seiten Volltexte von 28.909 Werken. Die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) enthält Metadaten der von der Staatsbibliothek zu Berlin digitalisierten Werke. Die Tabelle [sprach_info]http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) enthält automatisch bestimmte Angaben zur Sprache auf jeder Volltextseite sowie zur Konfidenz dieser Angabe (Erwartungsbereich). Die Tabelle [volltext_mit_titel_und_ort](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext_mit_titel_und_ort) ermöglicht eine Visualisierung der Druckorte der digitalisierten Werte bzw. eine Recherche über Längen- und Breitengrade. Alle Tabellen enthalten eine Spalte mit Identifikatoren; hierfür wird die PPN genutzt, d.h die **P**ica **P**roduction **N**umber, die im deutschen Bibliothekssystem benutzt wird. PPNs sind eindeutige Identifikatoren, die auch für jedes Werk in den [Digitalisierten Sammlungen der Staatsbibliothek zu Berlin](https://digital.staatsbibliothek-berlin.de/) verwendet werden. Beispielsweise findet sich die PPN63354499X im Link zu diesem Werk https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN63354499X in den digitalisierten Sammlungen.
+
+Im folgenden werden Beispiele für SQL-Abfragen präsentiert, die es den Nutzenden ermöglichen sollen, die Logik dieser Abfragen zu verstehen und selbst SQL-Abfragen zu formulieren. Grundsätzlich sind die SQL-Queries in der Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) auszuführen. Die einzige Ausnahme bilden Suchen, die innerhalb der einzelnen Textseiten bzw. im ganzen Korpus ausgeführt werden; vergleiche dazu die Ausführungen unten.
 
 
 
@@ -100,118 +106,112 @@ Zusammenstellung von Datensets anhand formaler (Publikationsdatum, Sprache), tec
 Über die digitalisierten Sammlungen einen Text identifizieren (Volltext muss vorhanden sein) und die PPN notieren. Die PPN dann in die folgende SQL-Query eingeben; PPNs benötigen immer Anführungszeichen und beginnen mit PPN:
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
-where "ppn" = 'PPN63354499X'
-order by file_name
+select rowid, id, filename, PPN, text
+from volltext
+where "PPN" = 'PPN63354499X'
+order by filename
 ```
 (33 Zeilen)
 
-Auf der Ergebnisseite finden sich dann links, über die das Ergebnis als [.json](http://datasette.lx0246.sbb.spk-berlin.de/fulltext.json?sql=select+rowid%2C+id%2C+file_name%2C+ppn%2C+text+%0D%0Afrom+text+%0D%0Awhere+%22ppn%22+%3D+%27PPN63354499X%27+%0D%0Aorder+by+file_name) oder [CSV](http://datasette.lx0246.sbb.spk-berlin.de/fulltext.csv?sql=select+rowid%2C+id%2C+file_name%2C+ppn%2C+text+%0D%0Afrom+text+%0D%0Awhere+%22ppn%22+%3D+%27PPN63354499X%27+%0D%0Aorder+by+file_name&_size=max) exportiert werden kann.
+Auf der Ergebnisseite finden sich dann links, über die das Ergebnis als [.json](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam.json?sql=select+rowid%2C+id%2C+filename%2C+PPN%2C+text%0D%0Afrom+volltext%0D%0Awhere+%22PPN%22+%3D+%27PPN63354499X%27%0D%0Aorder+by+filename) oder [CSV](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam.csv?sql=select+rowid%2C+id%2C+filename%2C+PPN%2C+text%0D%0Afrom+volltext%0D%0Awhere+%22PPN%22+%3D+%27PPN63354499X%27%0D%0Aorder+by+filename&_size=max) exportiert werden kann.
 
 ### Textkorpus nach PPN exportieren
 Über die digitalisierten Sammlungen ein Textkorpus identifizieren und die PPNs notieren.
 
-Bei der folgenden Abfrage zuerst wird zuerst nach PPN, dann nach file_name sortiert.
+Bei der folgenden Abfrage zuerst wird zuerst nach PPN, dann nach filename sortiert.
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
-where "ppn" in ('PPN633196762', 'PPN63354499X', 'PPN636876446', 'PPN636879666', 'PPN641477597')
-order by ppn, file_name
+select rowid, id, filename, PPN, text
+from volltext
+where "PPN" in ('PPN633196762', 'PPN63354499X', 'PPN636876446', 'PPN636879666', 'PPN641477597')
+order by PPN, filename
 ```
 (5 Texte, zusammen 801 Zeilen)
 
 
 ### Textkorpus nach Begriffen im Werktitel identifizieren
-Suche nach einem exakten Werktitel: `"Kriegslieder und Kriegsgedichte"`
+Suche nach einem exakten Werktitel: "Kriegslieder und Kriegsgedichte"
 
 ```sql
-select modsinfo.ppn, name0_displayForm, titleInfo_title, [originInfo-publication0_dateIssued], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.PPN
+select modsinfo.PPN, name0_displayForm, titleInfo_title, [originInfo-publication0_dateIssued], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
 and titleInfo_title = "Kriegslieder und Kriegsgedichte"
-order by file_name
+order by filename
 ```
 (29 Zeilen)
 
-Suche nach Werken mit `"Gedichte"` im Titel
+Suche nach Werken mit "Gedichte" im Titel
 
 ```sql
-select modsinfo.ppn, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.ppn
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
 and titleInfo_title like "%Gedichte%"
 and "originInfo-publication0_dateIssued" = "1914"
-order by modsinfo.ppn, file_name
+order by modsinfo.PPN, filename
 ```
 (279 Zeilen)
 
-Suche nach Werken mit dem Begriff `"Erzählung"` im Untertitel
+Suche nach Werken mit dem Begriff "Erzählung" im Untertitel
 
 ```sql
-select modsinfo.ppn, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.ppn
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
 and titleInfo_subTitle like "%Erzählung%"
 and "originInfo-publication0_dateIssued" = "1914"
-order by modsinfo.ppn, file_name
+order by modsinfo.PPN, filename
 ```
 (3 Werke, 595 Zeilen)
 
 ### Textkorpus nach Sprache identifizieren
 
-Hierzu wird die Tabelle ["modsinfo"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo) benutzt. Sie enthält bibliothekarisch erfasste Sprachangaben zu ganzen Werken. Die für dieses Beispiel gewählte Sprache ist `"rus"` [nach ISO 639-2 Russisch](https://www.loc.gov/standards/iso639-2/php/code_list.php). Die SQL-Abfrage lautet:
+Hierzu wird die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) benutzt. Sie enthält bibliothekarisch erfasste Sprachangaben zu ganzen Werken. Die für dieses Beispiel gewählte Sprache ist "rus" [nach ISO 639-2 Russisch](https://www.loc.gov/standards/iso639-2/php/code_list.php). Die SQL-Abfrage lautet:
 
 ```sql
-select modsinfo.ppn, name0_displayForm as Autor, language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Erscheinungsjahr
+select modsinfo.PPN, name0_displayForm as Autor, language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Erscheinungsjahr
 from modsinfo
 where "language_languageTerm" = "rus"
 order by Erscheinungsjahr
 ```
 (72 Zeilen bzw. Werke; hier müssen dann zunächst die PPNs extrahiert und anschließend wie oben beschrieben die Volltexte exportiert werden)
 
-**Zum Vergleich:** Man kann auch die Tabelle ["lang"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang) nach den auf einzelnen Seiten erkannten Sprachen abfragen. Die Tabelle `"lang"` enthält automatisch generierte Sprachangaben zu einzelnen Seiten sowie Konfidenzen zur Verlässlichkeit dieser Angabe. Die für dieses Beispiel gewählte Sprache ist `"ru"` [nach ISO 639-1 Russisch](https://www.loc.gov/standards/iso639-2/php/code_list.php); die Konfidenz soll höher oder gleich 80% sein; sortiert wird zuerst nach PPN, dann nach filename. Angezeigt werden die ersten 1.500 Zeilen, derzeit ist die Anzeige bzw. der Export auf diese Zahl limitiert.
+**Zum Vergleich:** Man kann auch die Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info) nach den auf einzelnen Seiten erkannten Sprachen abfragen. Die Tabelle "sprach_info" enthält automatisch generierte Sprachangaben zu einzelnen Seiten sowie Konfidenzen zur Verlässlichkeit dieser Angabe. Die für dieses Beispiel gewählte Sprache ist "ru" [nach ISO 639-1 Russisch](https://www.loc.gov/standards/iso639-2/php/code_list.php); die Konfidenz soll höher oder gleich 80% sein; sortiert wird zuerst nach PPN, dann nach filename. Angezeigt werden die ersten 1.500 Zeilen, derzeit ist die Anzeige bzw. der Export auf diese Zahl limitiert.
 
 ```sql
-select rowid, [index], ppn, filename, language, confidence
-from lang
+select rowid, id, PPN, filename, language, confidence
+from sprach_info
 where "language" = "ru" and "confidence" >= 0.8
-order by ppn, filename
+order by PPN, filename
 ```
 (mehr als 1.500 Zeilen)
 
 Die über die obige Suche identifizierten PPNs werden durch folgende Suchabfrage aufgelistet:
 
 ```sql
-select distinct(ppn)
-from lang
+select distinct(PPN)
+from sprach_info
 where "language" = "ru" and "confidence" >= 0.8
-order by ppn
+order by PPN
 ```
 (63 Zeilen)
 
 ### Textkorpus über Suchworte im Text identifizieren
 
-Für die Suche nach Begriffen oder Phrasen kann ausschließlich die Tabelle ["text"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/text) genutzt werden. Dort gibt es ein Suchfeld (`"Search"`), in das ein einzelnes oder mehrere Wörter eingegeben werden können. Wird eine bestimmte Phrase gesucht, muss diese durch Anführungszeichen umschlossen werden.
+Für die Suche nach Begriffen oder Phrasen kann ausschließlich die Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) genutzt werden. Dort gibt es ein Suchfeld ("Search"), in das ein einzelnes oder mehrere Wörter eingegeben werden können. Wird eine bestimmte Phrase gesucht, muss diese durch Anführungszeichen umschlossen werden.
 
 **Beispiele:**
-Die Suche nach dem Begriff `"Satrapen"` (ohne Anführungszeichen) liefert 136 Zeilen, d.h. auf 136 Textseiten kommt dieser Begriff mindestens einmal vor
-Die Suche mit den zwei Begriffen `"Silbermünzen Satrapen"` (ohne Anführungszeichen) liefert zwei Zeilen: PPN768209382 und PPN636879666, wobei die beiden Begriffe gemeinsam (aber unverbunden) auf einer Textseite vorkommen
-Die Phrasensuche `"Silbermünzen der Satrapen"` (mit Anführungszeichen) liefert nur eine Zeile (PPN636879666). Alternativ kann für dasselbe Ergebnis auch Silbermünzen.der.Satrapen in das Suchfeld eingegeben werden.
-
-**Varianten der Phrasensuche**
-Wird `"Silbermünzen + der + Satrapen"` (ohne Anführungszeichen) in das Suchfeld eingegeben, werden zwei Treffer erzielt: Auf beiden Seiten finden sich alle drei Worte.
-Die Eingabe `"chinesische Frauen" + Rasse` liefert zwei Treffer, auf denen die Phrase `"chinesische Frauen"` als auch der Begriff `"Rasse"` zu finden sind.
+Die Suche nach dem Begriff "Satrapen" (ohne Anführungszeichen) liefert 136 Zeilen, d.h. auf 136 Textseiten kommt dieser Begriff mindestens einmal vor. Die Suche mit den zwei Begriffen "Silbermünzen Satrapen" (ohne Anführungszeichen) liefert zwei Zeilen: PPN768209382 und PPN636879666, wobei die beiden Begriffe gemeinsam (aber unverbunden) auf einer Textseite vorkommen. Die Phrasensuche "Silbermünzen der Satrapen" (**MIT* Anführungszeichen) liefert nur eine Zeile (PPN636879666). 
 
 
-**Wortteile**
-Darüber hinaus kann auch nach Wortteilen gesucht werden. Dies geschieht über eine SQL-Query in der Tabelle ["fulltext"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext). Für die Suche wird der zu suchende Begriff mit Prozentzeichen % umschlossen; diese stehen für eine beliebige Folge von Zeichen, d.h. es werden ggf. auch Wortteile angezeigt:
+**Wortteile:**
+Darüber hinaus kann auch nach Wortteilen gesucht werden. Dies geschieht über eine SQL-Query in der Datenbank [DigiSam](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam). Für die Suche wird der zu suchende Begriff mit Prozentzeichen % umschlossen; diese stehen für eine beliebige Folge von Zeichen, d.h. es werden ggf. auch Wortteile angezeigt:
 SQL-Query zur Abfrage eines einzelnen Wort / eines Wortteils im Text:
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
+select rowid, id, filename, PPN, text
+from volltext
 where "text" like '%Diphtheritis%'
 ```
 (819 Zeilen)
@@ -219,8 +219,8 @@ where "text" like '%Diphtheritis%'
 Ähnliche Abfrage, Diphteritis mit nur einem h:
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
+select rowid, id, filename, PPN, text
+from volltext
 where "text" like '%Diphteritis%'
 ```
 (180 Zeilen)
@@ -228,19 +228,19 @@ where "text" like '%Diphteritis%'
 SQL-Query nach mehreren Suchworten im Text, hier `"Diphteritis"` und `"Cholera"`
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
+select rowid, id, filename, PPN, text
+from volltext
 where "text" like '%Diphteritis%' and "text" like '%Cholera%'
 ```
 (53 Zeilen, d.h. 53 Textseiten auf denen beiden Begriffe mindestens je einmal vorkommen)
 
 Der Unterschied zwischen beiden Suchmöglichkeiten wird an folgendem Beispiel deutlich:
-Die unscharfe Suche nach dem Begriff `Diphtheritis` (ohne Anführungszeichen) in der Tabelle [text](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/text) liefert 786 Zeilen. 
-Die Suche nach dem Begriff `'%Diphtheritis%'` (mit Prozentzeichen) in der Tabelle \"[fulltext](http://datasette.lx0246.sbb.spk-berlin.de/fulltext)\"
+Die unscharfe Suche nach dem Begriff "Diphtheritis" (ohne Anführungszeichen) in der Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) liefert 786 Zeilen. 
+Die Suche nach dem Begriff '%Diphtheritis%' (mit Prozentzeichen) in der Datenbank [DigiSam](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam)
 
 ```sql
-select rowid, id, file_name, ppn, text
-from text
+select rowid, id, filename, PPN, text
+from volltext
 where "text" like '%Diphtheritis%'
 ```
 
@@ -251,7 +251,7 @@ Anders als bei der ersten Suche sind hier weitere Begriffe mit eingeschlossen, b
 
 
 ### Textkorpus nach Publikationsdatum und Ort zusammenstellen
-Hierfür wird die Tabelle ["modsinfo"](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo) genutzt, die Metadaten zum digitalisierten Werk enthält, wie etwa Publikationsdatum und -ort. 
+Hierfür wird die Tabelle ["modsinfo"](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) genutzt, die Metadaten zum digitalisierten Werk enthält, wie etwa Publikationsdatum und -ort. 
 
 Die Abfrage nach einem Datum erfolgt über die Spalte **originInfo-publication0_dateIssued**, die nach einem Ort (z.B. Leipzig) in der Spalte **originInfo-publication0_place_placeTerm**
 
@@ -261,9 +261,9 @@ Alle Werke mit einem bestimmten Publikationsdatum, nur Volltexte:
 select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_place_placeTerm], [originInfo-publication0_dateIssued]
 from modsinfo
 where [originInfo-publication0_dateIssued] = 1910 and [mets_fileSec_fileGrp-FULLTEXT-count] > 1
-order by modsinfo.ppn
+order by modsinfo.PPN
 ```
-(86 Zeilen)
+(134 Zeilen)
 
 Alle Werke, die an einem bestimmten Publikationsort gedruckt wurden:
 
@@ -271,9 +271,9 @@ Alle Werke, die an einem bestimmten Publikationsort gedruckt wurden:
 select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_place_placeTerm], [originInfo-publication0_dateIssued]
 from modsinfo
 where [originInfo-publication0_place_placeTerm] = "Paris"
-order by modsinfo.ppn
+order by modsinfo.PPN
 ```
-(1.368 Zeilen)
+(566 Zeilen)
 
 Alle Werke aus einem bestimmten Publikationszeitraum:
 
@@ -281,9 +281,9 @@ Alle Werke aus einem bestimmten Publikationszeitraum:
 select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_place_placeTerm], [originInfo-publication0_dateIssued]
 from modsinfo
 where [originInfo-publication0_dateIssued] between 1900 and 1908
-order by modsinfo.ppn
+order by modsinfo.PPN
 ```
-(mehr als 1.500 Zeilen)
+(1.444 Zeilen)
 
 **Musterabfrage Publikationsort und -datum**
 
@@ -291,37 +291,37 @@ order by modsinfo.ppn
 select [gewünschte Spalten auswählen]
 from modsinfo
 where "originInfo-publication0_dateIssued" = "XXXX" and "originInfo-publication0_place_placeTerm" = "XXXXX"
-order by ppn
+order by PPN
 ```
 
 **Beispielabfrage:**
 ```sql
-select ppn, name0_displayForm, [name0_namePart-given], [name0_namePart-family],  titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [originInfo-publication0_place_placeTerm]
+select PPN, name0_displayForm, [name0_namePart-given], [name0_namePart-family],  titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [originInfo-publication0_place_placeTerm]
 from modsinfo
 where "originInfo-publication0_dateIssued" = "1915" and "originInfo-publication0_place_placeTerm" = "Nürnberg"
-order by ppn
+order by PPN
 ```
 (12 Zeilen)
 
 **Nun die obige Titelliste zusammen mit ihren Volltexten**
-Die Abfrage dieser Titel erfolgt über das Zusammenführen zweier Tabellen in einem **Join**. Dabei wird immer ein Datensatz aus der ersten Tabelle (modsinfo) mit einem Datensatz aus der zweiten Tabelle (text) zu einem neuen Datensatz zusammengesetzt. Das macht man natürlich nur für die Datensätze, die auch zusammen gehören, bei denen also der Wert des Primärschlüssels mit dem Wert des Fremdschlüssels übereinstimmt. Bei den digitalisierten Sammlungen ist es ratsam, die PPN als gemeinsamen Schlüssel zu verwenden. Die Gleichheit der beiden Werte wird durch eine entsprechende Bedingung in der where-Klausel ausgedrückt. In der from-Klausel muss man die beiden gewünschten Tabellen angeben. 
+Die Abfrage dieser Titel erfolgt über das Zusammenführen zweier Tabellen in einem **Join**. Dabei wird immer ein Datensatz aus der ersten Tabelle (modsinfo) mit einem Datensatz aus der zweiten Tabelle (volltext) zu einem neuen Datensatz zusammengesetzt. Das macht man natürlich nur für die Datensätze, die auch zusammen gehören, bei denen also der Wert des Primärschlüssels mit dem Wert des Fremdschlüssels übereinstimmt. Bei den digitalisierten Sammlungen ist es ratsam, die PPN als gemeinsamen Schlüssel zu verwenden. Die Gleichheit der beiden Werte wird durch eine entsprechende Bedingung in der where-Klausel ausgedrückt. In der from-Klausel muss man die beiden gewünschten Tabellen angeben. 
 
 **Beispielabfrage:** 
 
 Zunächst werden die Spalten ausgewählt, die angezeigt werden sollen; ist der Spaltenname in zwei Tabellen identisch, müssen diese durch ein vorangestelltes \"Spaltenname.\" angesprochen werden; dann folgt die erste Tabelle, dann die inner join-Abfrage mit der Angabe des gemeinsamen Schlüssels, dann die Angabe der Suchparameter
 
 ```sql
-select modsinfo.ppn, name0_displayForm, [originInfo-publication0_place_placeTerm], [originInfo-publication0_dateIssued], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.ppn and "originInfo-publication0_dateIssued" = "1915" and "originInfo-publication0_place_placeTerm" = "Nürnberg"
-order by modsinfo.ppn
+select modsinfo.PPN, name0_displayForm, [originInfo-publication0_place_placeTerm], [originInfo-publication0_dateIssued], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN and "originInfo-publication0_dateIssued" = "1915" and "originInfo-publication0_place_placeTerm" = "Nürnberg"
+order by modsinfo.PPN
 ```
 (630 Zeilen)
 
 
 ## Suche über Schlagworte
 
-Nicht alle Schlagwort-Spalten in der Metadaten-Tabelle \"[modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo)\" sind gleichmäßig gut gefüllt. Zur Verfügung stehen die Spalten \"genre-aad\", \"subject-EC1418_genre\", \"classification-ddc\" sowie \"classification-sbb\" und \"classificaton-ZVDD\". Die Spalte \"genre-aad\" entspricht dem von der Arbeitsgemeinschaft Alte Drucke im MARC-Feld hinterlegten Genre (\"Erzählung, Roman, Novelle, Medizin, Tagebuch, Briefsammlung\"); etwa ein Viertel aller Felder sind gefüllt. Die Spalte \"subject-EC1418_genre\" enthält die Genrebezeichnungen, die für das Projekt \"Europeana Collections 1914-1918: Remembering the First World War – a digital collection of outstanding sources from European national libraries\" angelegt wurden; diese Titel beziehen sich auschließlich auf den Ersten Weltkrieg. Hier finden sich rund 25.000 Einträge wie \"album, book, diary, photograph, poem, sheet music, song book, trench journal\". Die Spalte \"classification-ddc\" enthält Einträge mit einer Dewey Decimal Classification Nummer, z.B. 508 für \"Naturgeschichte\", 641 für \"Essen und Trinken\" oder 745 \"Dekorative Künste\"; hier sind etwa 10% der Felder befüllt. Die Spalte \"genre-marcgt\" enthält Genrebezeichnungen nach der MARC Genre Term List, z.B. \"Jugendbuch, Kinderbuch, Anthologie, Lesebuch, Biografie, Schulbuch\"; hier sind ebenfalls nur etwa 10% der Felder befüllt.
+Nicht alle Schlagwort-Spalten in der Metadaten-Tabelle \"[modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo)\" sind gleichmäßig gut gefüllt. Zur Verfügung stehen die Spalten \"genre-aad\", \"subject-EC1418_genre\", \"classification-ddc\" sowie \"classification-sbb\" und \"classificaton-ZVDD\". Die Spalte \"genre-aad\" entspricht dem von der Arbeitsgemeinschaft Alte Drucke im MARC-Feld hinterlegten Genre (\"Erzählung, Roman, Novelle, Medizin, Tagebuch, Briefsammlung\"); etwa ein Viertel aller Felder sind gefüllt. Die Spalte \"subject-EC1418_genre\" enthält die Genrebezeichnungen, die für das Projekt \"Europeana Collections 1914-1918: Remembering the First World War – a digital collection of outstanding sources from European national libraries\" angelegt wurden; diese Titel beziehen sich auschließlich auf den Ersten Weltkrieg. Hier finden sich rund 25.000 Einträge wie \"album, book, diary, photograph, poem, sheet music, song book, trench journal\". Die Spalte \"classification-ddc\" enthält Einträge mit einer Dewey Decimal Classification Nummer, z.B. 508 für \"Naturgeschichte\", 641 für \"Essen und Trinken\" oder 745 \"Dekorative Künste\"; hier sind etwa 10% der Felder befüllt. Die Spalte \"genre-marcgt\" enthält Genrebezeichnungen nach der MARC Genre Term List, z.B. \"Jugendbuch, Kinderbuch, Anthologie, Lesebuch, Biografie, Schulbuch\"; hier sind ebenfalls nur etwa 10% der Felder befüllt.
 
 **Beispielabfragen:** 
 
@@ -357,12 +357,11 @@ Werden Volltexte in diesen Kategorien gesucht, dann erfolgt dies wieder über ei
 
 ```sql
 select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [subject-EC1418_genre], text
-from modsinfo, text
-where text.ppn = modsinfo.PPN
+from modsinfo, volltext
+where volltext.PPN = modsinfo.PPN
 and "subject-EC1418_genre" like "%poem%"
 ```
 (mehr als 1,500 Zeilen)
-**t.b.c.**
 
 ## Suche über Kategorien oder Materialart
 
@@ -400,9 +399,9 @@ where "classification-ZVDD" like '%Einblattdrucke%'
 Werden Volltexte in diesen Kategorien gesucht, dann erfolgt dies wieder über einen **Jointable**:
 
 ```sql
-select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [classification-ZVDD], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.PPN
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [classification-ZVDD], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
 and "classification-ZVDD" like '%Geschichte / Ethnographie / Geographie%'
 ```
 (mehr als 1,500 Zeilen)
@@ -410,9 +409,9 @@ and "classification-ZVDD" like '%Geschichte / Ethnographie / Geographie%'
 Auch kombinierte Kategorien (wie in der Präsentation der digitalisierten Sammlungen angegeben) können präzise angegeben werden:
 
 ```sql
-select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], file_name, text.ppn, text
-from text, modsinfo
-where text.ppn = modsinfo.PPN
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], filename, volltext.PPN, text
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
 and "classification-ZVDD" = "Historische Drucke, Sprachen / Literaturen"
 ```
 (mehr als 1,500 Zeilen)
@@ -422,52 +421,54 @@ and "classification-ZVDD" = "Historische Drucke, Sprachen / Literaturen"
 
 ### Umfang der Werke
 
-In der Spalte mets_fileSec_fileGrp-FULLTEXT-count finden sich Angaben dazu, wie viele Seiten Volltext vorliegen. Daher kann nach dem Umfang der Werke gefiltert werden
+In der Spalte mets_fileSec_fileGrp-FULLTEXT-count finden sich Angaben dazu, wie viele Seiten Volltext vorliegen. Daher kann nach dem Umfang der Werke gefiltert werden.
 
 Beispielabfrage: Alle Werke mit mehr als 699 Seiten
 
 ```sql
-select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [mets_fileSec_fileGrp-FULLTEXT-count]
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], cast([mets_fileSec_fileGrp-FULLTEXT-count] as INT) as Seiten_Int
 from modsinfo
-where "mets_fileSec_fileGrp-FULLTEXT-count" > 699
+where Seiten_Int > 699
 ```
 (1.270 Zeilen)
 
-Alle Werke mit mehr als 699, aber weniger als 1000 Seiten
+Alle Werke mit mehr als 99, aber weniger als 200 Seiten
 
 ```sql
-select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], [mets_fileSec_fileGrp-FULLTEXT-count]
+select modsinfo.PPN, name0_displayForm, titleInfo_title, titleInfo_subTitle, [originInfo-publication0_dateIssued], cast([mets_fileSec_fileGrp-FULLTEXT-count] as INT) as Seiten_Int
 from modsinfo
-where "mets_fileSec_fileGrp-FULLTEXT-count" > 699
-and "mets_fileSec_fileGrp-FULLTEXT-count" < 1000
+where Seiten_Int > 699
+and Seiten_Int < 1000
 ```
 (939 Zeilen)
 
 ## Suche über Visualisierung auf Karte 
 
-Hierfür wird die Tabelle [fulltext_modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/fulltext_modsinfo) genutzt.
+Hierfür wird die Tabelle [volltext_mit_titel_und_ort](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext_mit_titel_und_ort) genutzt.
 
 Wo wurden die folgenden PPNs gedruckt?
 
 ```sql
-select rowid, ppn, file, text, latitude, longitude
-from fulltext_modsinfo
-where "ppn" IN ('PPN633196762', 'PPN63354499X', 'PPN636876446', 'PPN636879666')
+select rowid, PPN, file, text, latitude, longitude
+from volltext_mit_titel_und_ort
+where "PPN" IN ('PPN633196762', 'PPN63354499X', 'PPN636876446', 'PPN636879666')
 ```
 (Leipzig, Berlin, München, Wien)
 
 Welche Bücher wurden gemäß [Geo-Koordinaten](https://geohack.toolforge.org/geohack.php?pagename=Shanghai&language=de&params=31.233333333333_N_121.46666666667_E_dim:90000_region:CN-SH_type:city(24870895)&title=Shanghai) in Shanghai (Schreibweisen auch Chang-hai, Chang-Hai, Shanghae, Shang-ʿhai, [Shanghai], [Shanghae], Shanghai [u.a], \"Shanghai, China\") gedruckt?
 
 ```sql
-select rowid, ppn, file, text, latitude, longitude
-from fulltext_modsinfo
+select rowid, PPN, file, text, latitude, longitude
+from volltext_mit_titel_und_ort
 where "latitude" = "31.166666666667" and "longitude" = "121.46666666667"
 ```
+
+(mehr als 1.500 Ergebnisse)
 
 # Datenanalyse und Bibliometrie
 
 ## Sprachen
-Welche Sprachen wurden von den Bibliothekar:innen notiert (Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo))?
+Welche Sprachen wurden von den Bibliothekar:innen notiert (Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo))?
 
 ```sql
 select language_languageTerm as Sprache, count(language_languageTerm) as Häufigkeit
@@ -478,11 +479,11 @@ order by Häufigkeit desc
 (68 Zeilen)
 
 
-Welche Sprachen wurden automatisch erkannt (Tabelle [lang](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang))?
+Welche Sprachen wurden automatisch erkannt (Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info))?
 
 ```sql
 select language as Sprache, count(language) as Häufigkeit
-from lang
+from sprach_info
 group by "language"
 order by Häufigkeit desc
 ```
@@ -491,22 +492,22 @@ order by Häufigkeit desc
 Zeige mir alle Seiten, die  mit einer Konfidenz von über 90% in einer bestimmten Sprache vorliegen (hier: Chinesisch, zh)
 
 ```sql
-select rowid, [index], ppn, filename, language, confidence
-from lang
+select rowid, id, PPN, filename, language, confidence
+from sprach_info
 where "language" = "zh" and "confidence" >= 0.9
-order by ppn, filename
+order by PPN, filename
 ```
-(Mehr als 1,500 Zeilen)
+(Mehr als 1.500 Zeilen)
 
 ### Auszählung Seiten nach Sprache
 
-Beispiele (nach Tabelle [lang](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang)): 
+Beispiele (nach Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info)): 
 
 Wieviele Seiten gibt es auf Spanisch?
 
 ```sql
-select count(ppn) as Anzahl_Seiten
-from lang
+select count(PPN) as Anzahl_Seiten
+from sprach_info
 where "language" = "es"
 ```
 (68.908 Seiten)
@@ -514,8 +515,8 @@ where "language" = "es"
 Wieviele Werke gibt es auf Spanisch?
 
 ```sql
-select count(distinct ppn) as Anzahl_Titel
-from lang
+select count(distinct PPN) as Anzahl_Titel
+from sprach_info
 where "language" = "es"
 ```
 (1.027 Titel)
@@ -523,8 +524,8 @@ where "language" = "es"
 Wieviele Seiten gibt es auf Spanisch mit einer Konfidenz über 90%?
 
 ```sql
-select count(ppn) as Anzahl_Seiten
-from lang
+select count(PPN) as Anzahl_Seiten
+from sprach_info
 where "language" = "es" and "confidence" > 0.9
 ```
 (67.936 Seiten)
@@ -532,32 +533,32 @@ where "language" = "es" and "confidence" > 0.9
 Wieviele Werke gibt es auf Spanisch mit einer Konfidenz über 90%?
 
 ```sql
-select count(distinct ppn) as Anzahl_Titel
-from lang
+select count(distinct PPN) as Anzahl_Titel
+from sprach_info
 where "language" = "es" and "confidence" > 0.9
 ```
 (448 Titel)
 
-Wieviele Werke mit Seiten in Spanisch wurden zwischen 1600 und 1920 publiziert (nach Tabelle [lang](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang))?
+Wieviele Werke mit Seiten in Spanisch wurden zwischen 1600 und 1920 publiziert (nach Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info))?
 
 ```sql
-select language as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct text.ppn) as Häufigkeit
-from lang, modsinfo, text
-where lang.ppn = modsinfo.ppn
-and lang.ppn = text.ppn
+select language as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct volltext.PPN) as Häufigkeit
+from sprach_info, modsinfo, volltext
+where sprach_info.PPN = modsinfo.PPN
+and sprach_info.PPN = volltext.PPN
 and language = "es"
 and [originInfo-publication0_dateIssued] between 1600 and 1920
 group by "originInfo-publication0_dateIssued"
 order by Publikationsjahr asc
 ```
-(145 Zeilen)
+(150 Zeilen)
 
-Wieviele Werke auf Spanisch wurden zwischen 1600 und 1920 publiziert (nach Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo))?
+Wieviele Werke auf Spanisch wurden zwischen 1600 und 1920 publiziert (nach Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo))?
 
 ```sql
-select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct text.ppn) as Häufigkeit
-from modsinfo, text
-where text.ppn = modsinfo.ppn
+select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct volltext.PPN) as Häufigkeit
+from modsinfo, volltext
+where volltext.PPN = modsinfo.PPN
 and language_languageTerm = "spa"
 and [originInfo-publication0_dateIssued] between 1600 and 1920
 group by "originInfo-publication0_dateIssued"
@@ -567,16 +568,16 @@ order by Publikationsjahr asc
 
 ### Auszählung Werke nach Sprache 
 Hier gibt es zwei Möglichkeiten:
-a) über die automatisch erkannte Sprache in der Tabelle [lang](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/lang)
+a) über die automatisch erkannte Sprache in der Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info)
 Die Sprachen werden hier im [ISO 639-1 Code](https://www.loc.gov/standards/iso639-2/php/code_list.php) angegeben, siehe zweite Spalte.
 
 Wieviele Werke wurden im Publikationszeitraum 1900 bis 1920 auf Englisch veröffentlicht?
 
 ```sql
-select language as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct text.ppn) as Häufigkeit
-from lang, modsinfo, text
-where lang.ppn = modsinfo.ppn
-and lang.ppn = text.ppn
+select language as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct volltext.PPN) as Häufigkeit
+from sprach_info, modsinfo, volltext
+where sprach_info.PPN = modsinfo.PPN
+and sprach_info.PPN = volltext.PPN
 and language = "en"
 and [originInfo-publication0_dateIssued] between 1900 and 1920
 group by "originInfo-publication0_dateIssued"
@@ -584,13 +585,13 @@ order by Publikationsjahr asc
 ```
 (21 Zeilen)
 
-b) über die von Bibliothekar:innen notierten Sprachangaben in der Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo)
+b) über die von Bibliothekar:innen notierten Sprachangaben in der Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo).
 Die Sprachen werden hier im [ISO 639-2 Code, siehe erste Spalte](https://www.loc.gov/standards/iso639-2/php/code_list.php) angegeben.
 
 ```sql
-select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct text.ppn) as Häufigkeit
-from modsinfo, text
-where text.ppn = modsinfo.ppn
+select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, count(distinct volltext.PPN) as Häufigkeit
+from modsinfo, volltext
+where volltext.PPN = modsinfo.PPN
 and language_languageTerm = "eng"
 and [originInfo-publication0_dateIssued] between 1900 and 1920
 group by "originInfo-publication0_dateIssued"
@@ -622,7 +623,7 @@ from modsinfo
 group by "originInfo-publication0_dateIssued"
 order by Häufigkeit desc
 ```
-(mehr als 1.500 Zeilen)
+(358 Zeilen)
 
 **Abfrage Häufigkeiten Publikationsjahr in einem bestimmten Zeitraum**
 
@@ -639,27 +640,27 @@ order by Publikationsjahr asc
 **Anzahl Seiten in 2 PPNs zusammengenommen**
 
 ```sql
-select count(ppn) as Anzahl_Seiten from text where "PPN" IN ("PPN642527652", "PPN642316899")
+select count(PPN) as Anzahl_Seiten from volltext where "PPN" IN ("PPN642527652", "PPN642316899")
 ```
 (174 Seiten)
 
 **Anzahl Seiten in 6 PPNs je Text**
 
 ```sql
-select ppn as PicaProduktionsNummer, count(ppn) as "Anzahl Seiten"
-from text
-where "ppn" IN ("PPN618440003", "PPN687699304", "PPN642191727", "PPN687955130", "PPN749599936", "PPN61844128X")
-group by "ppn"
+select PPN as PicaProduktionsNummer, count(PPN) as "Anzahl Seiten"
+from volltext
+where "PPN" IN ("PPN618440003", "PPN687699304", "PPN642191727", "PPN687955130", "PPN749599936", "PPN61844128X")
+group by "PPN"
 ```
-(628, 857, 430, 961, 173 und 784 Seiten)
+(6 Werke mit 628, 784, 430, 857, 961 und 173 Seiten)
 
 **Anzahl Seiten in 6 PPNs je Text, aufsteigend sortiert nach Publikationsjahr**
 
 ```sql
-select text.PPN as PicaProduktionsNummer,  [originInfo-publication0_dateIssued] as Publikationsjahr, count(text.PPN) as "Anzahl Seiten"
-from text, modsinfo
-where text.PPN = modsinfo.ppn
-and text.PPN IN ("PPN618440003", "PPN687699304", "PPN642191727", "PPN687955130", "PPN749599936", "PPN61844128X")
+select volltext.PPN as PicaProduktionsNummer,  [originInfo-publication0_dateIssued] as Publikationsjahr, count(volltext.PPN) as "Anzahl Seiten"
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
+and volltext.PPN IN ("PPN618440003", "PPN687699304", "PPN642191727", "PPN687955130", "PPN749599936", "PPN61844128X")
 group by PicaProduktionsNummer
 order by Publikationsjahr asc
 ```
@@ -668,49 +669,52 @@ order by Publikationsjahr asc
 **Anzahl Seiten je PPN mit Volltext aus dem Zeitraum 1900 bis 1905**
 
 ```sql
-select text.PPN as PicaProduktionsNummer,  [originInfo-publication0_dateIssued] as Publikationsjahr, count(text.PPN) as "Anzahl Seiten"
-from text, modsinfo
-where text.PPN = modsinfo.ppn
-and text.PPN IN (select modsinfo.ppn from modsinfo where [originInfo-publication0_dateIssued] between 1900 and 1905)
+select volltext.PPN as PicaProduktionsNummer, [originInfo-publication0_dateIssued] as Publikationsjahr, count(volltext.PPN) as "Anzahl Seiten"
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
+and volltext.PPN IN (select modsinfo.PPN from modsinfo where [originInfo-publication0_dateIssued] between 1900 and 1905)
 group by PicaProduktionsNummer
 order by Publikationsjahr asc
 ```
-(821 Zeilen)
+(1.137 Zeilen)
 
 **Durchschnittliche Anzahl Seiten pro Publikationsjahr aus dem Zeitraum 1900 bis 1915**
 
 ```sql
-select [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(text.PPN) * 1.0 / count(distinct text.PPN)), 2) as dec) as "Durchschnittliche Anzahl Seiten"
-from text, modsinfo
-where text.PPN = modsinfo.ppn
-and text.PPN IN (select modsinfo.ppn from modsinfo where [originInfo-publication0_dateIssued] between 1900 and 1915)
+select [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(volltext.PPN) * 1.0 / count(distinct volltext.PPN)), 2) as dec) as "Durchschnittliche Anzahl Seiten"
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
+and volltext.PPN IN (select modsinfo.PPN from modsinfo where [originInfo-publication0_dateIssued] between 1900 and 1915)
 group by Publikationsjahr
 order by Publikationsjahr asc
 ```
+(16 Zeilen)
 
 
 **Durchschnittliche Anzahl Seiten pro Publikationsjahr nach ausgewählten PPNs**
 
 ```sql
-select [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(text.PPN) * 1.0 / count(distinct text.PPN)), 2) AS DEC) as "Durchschnittliche Anzahl Seiten"
-from text, modsinfo
-where text.PPN = modsinfo.ppn
-and text.PPN IN ("PPN618440003", "PPN618747648", "PPN642188432", "PPN642322031", "PPN642344817", "PPN749600373", "PPN687699304", "PPN74959473X", "PPN642191727", "PPN687955130", "PPN687955386", "PPN687955629", "PPN687955947", "PPN749599839", "PPN749599936", "PPN61844128X", "PPN749600217", "PPN642527652", "PPN656981652", "PPN749600241", "PPN642316899", "PPN663380839", "PPN642321957", "PPN858815532")
+select [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(volltext.PPN) * 1.0 / count(distinct volltext.PPN)), 2) AS DEC) as "Durchschnittliche Anzahl Seiten"
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
+and volltext.PPN IN ("PPN618440003", "PPN618747648", "PPN642188432", "PPN642322031", "PPN642344817", "PPN749600373", "PPN687699304", "PPN74959473X", "PPN642191727", "PPN687955130", "PPN687955386", "PPN687955629", "PPN687955947", "PPN749599839", "PPN749599936", "PPN61844128X", "PPN749600217", "PPN642527652", "PPN656981652", "PPN749600241", "PPN642316899", "PPN663380839", "PPN642321957", "PPN858815532")
 group by Publikationsjahr
 order by Publikationsjahr asc
 ```
+(9 Zeilen)
 
 **Durchschnittliche Anzahl Seiten pro Publikationsjahr nach ausgewählter Sprache**
 
 ```sql
-select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(text.PPN) * 1.0 / count(distinct text.PPN)), 2) AS DEC) as "Durchschnittliche Anzahl Seiten"
-from text, modsinfo
-where text.PPN = modsinfo.ppn
-and text.PPN IN (select modsinfo.ppn from modsinfo where [originInfo-publication0_dateIssued] between 1908 and 1912)
+select language_languageTerm as Sprache, [originInfo-publication0_dateIssued] as Publikationsjahr, cast(round((count(volltext.PPN) * 1.0 / count(distinct volltext.PPN)), 2) AS DEC) as "Durchschnittliche Anzahl Seiten"
+from volltext, modsinfo
+where volltext.PPN = modsinfo.PPN
+and volltext.PPN IN (select modsinfo.PPN from modsinfo where [originInfo-publication0_dateIssued] between 1908 and 1912)
 and language_languageTerm = "spa"
 group by Publikationsjahr
 order by Publikationsjahr asc
 ```
+(5 Zeilen)
 
 
 # Ein Bilddatenset erstellen
@@ -753,23 +757,23 @@ Weitere Möglichkeiten der Manipulation einzelner Bilder können der [Dokumentat
 # Download von Volltexten und Bildern über die Schnittstellen der Staatsbibliothek zu Berlin
 
 Für diese Möglichkeiten wurden Skripte in der Programmiersprache R erstellt.
-Sie finden sich hier [auf dem GitHub-Repositorium des Referats IDM4]() **TODO Link einfügen**
+Sie finden sich hier [auf dem GitHub-Repositorium des Referats IDM4](https://github.com/qurator-spk/datasette/blob/main/Download-Volltexte-via-OAI-PMH%2BIIIF%2BManifeste.R) 
 
 # Anhang Erläuterungen zu den Datenquellen
 
 Die in datasette verfügbar gemachten Daten stammen aus einer Reihe verschiedener Quellen. 
 
 ## Volltexte
-Die Tabellen fulltext, text, lang und entropy entstammen aus einer auf Zenodo publizierten sqlite-Datenbank, die ALLE Volltexte enthält, die in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin zum 21. August 2019 verfügbar waren. Die Informationen zu Sprachen und Entropie wurden am 1. März 2023 hinzugefügt. Die Größe der sqlite-Datei beträgt etwa 15,8 GB, in der Datasette-Instanz belegt sie ca. 40 GB.  
+Die Tabellen volltext und sprach_info entstammen aus einer auf Zenodo publizierten sqlite-Datenbank, die ALLE Volltexte enthält, die in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin zum 21. August 2019 verfügbar waren. Die Informationen zu Sprachen und Entropie wurden am 1. März 2023 hinzugefügt. Die Größe der sqlite-Datei beträgt etwa 15,8 GB, in der Datasette-Instanz belegt sie ca. 40 GB.  
 
-Diese Volltexte wurden durch die Implementierung einer optischen Zeichenerkennung (OCR) digitalisierter Bücher gewonnen. In den digitalisierten Sammlungen der Staatsbibliothek zu Berlin (SBB) können die Volltexte manuell (Werk für Werk) heruntergeladen werden. Die Veröffentlichung eines Datensatzes von etwa 5 Millionen OCR-Seiten erleichtert den Zugang zu den Volltexten. 
+Diese Volltexte wurden durch die Implementierung einer optischen Zeichenerkennung (OCR) digitalisierter Bücher gewonnen. In den digitalisierten Sammlungen der Staatsbibliothek zu Berlin (SBB) können die Volltexte manuell (Werk für Werk) heruntergeladen werden. Die Veröffentlichung eines Datensatzes mit etwa 5 Millionen OCR-Seiten erleichtert prinzipiell den Zugang zu den Volltexten sowie ihre Nutzung z.B. zum Training von machine learning-Modellen. 
 
 Der Datensatz wurde 2023 unter [https://doi.org/10.5281/zenodo.7716097](https://doi.org/10.5281/zenodo.7716097) publiziert.
 
 
 ## Metadaten (Auszug aus den digitalisierte Sammlungen)
 
-Die Tabelle modsinfo enthält die Metadaten jener 25.576 Werke, deren Volltexte in der fulltext-Tabelle verfügbar sind. Diese Metadaten wurden am 25. Mai 2025 aus den digitalisierten Sammlungen der Staatsbibliothek zu Berlin (SBB) bezogen. In einem Schritt der Datenanreicherung wurden die Druckorte der Werke normalisiert (daher gibt es die Spalte "originInfo.publication0_place_placeTerm.normalised") und dann mit dem Tool OpenRefine mit GeoDaten angereichert (Spalten latitude, longitude). Daraus resultiert eine weitere datasette-Tabelle namens fulltext_modsinfo; sie stellt die Visualisierung der Druckorte jeder einzelnen in der Tabelle fulltext vorhandenen Seite dar. Diese Visualisierung wurde mit einem für datasette verfügbaren Plugin realisiert. Nicht verwechseln: fulltext_modsinfo bezieht sich auf die einzelnen Volltext-Seiten, die oberhalb der Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/fulltext/modsinfo) sichtbare Karte hingegen auf die einzelnen Werke.
+Die Tabelle modsinfo enthält die Metadaten jener rund 30.000 Werke, deren Volltexte in der volltext-Tabelle verfügbar sind. Diese Metadaten wurden am 25. Mai 2025 aus den digitalisierten Sammlungen der Staatsbibliothek zu Berlin (SBB) bezogen. In einem Schritt der Datenanreicherung wurden die Druckorte der Werke normalisiert (daher gibt es die Spalte "originInfo.publication0_place_placeTerm.normalised") und dann mit dem Tool OpenRefine mit GeoDaten angereichert (Spalten latitude, longitude). Daraus resultiert eine weitere datasette-Tabelle namens volltext_mit_titel_und_ort; sie realisiert die Visualisierung der Druckorte jeder einzelnen in der Tabelle volltext vorhandenen Seite. Diese Visualisierung wurde mit einem für datasette verfügbaren Plugin implementiert. Bitte nicht verwechseln: volltext_mit_titel_und_ort bezieht sich auf die einzelnen Volltext-Seiten, die oberhalb der Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) sichtbare Karte hingegen auf die einzelnen Werke.
 
 Die in der Datasette-Instanz verwendete Tabelle stellt einen kleinen Auszug aus einer größeren Datenpublikation dar, der auf Zenodo publiziert wurde. Dieser Datensatz besteht aus einer einzigen Tabelle im Format .parquet, die die Metadaten aller 219.419 Werke enthält, die am 29. Juli 2024 in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin verfügbar waren. Die Größe der .parquet-Datei beträgt etwa 46 MB. Der Datensatz wurde im August 2024 unter [https://doi.org/10.5281/zenodo.7716031](https://doi.org/10.5281/zenodo.7716031) publiziert. 
 
@@ -780,5 +784,5 @@ Die Tabelle ark-metadata besteht aus einer einzelnen Tabelle. Dieser Datensatz e
 
 
 ## Metadaten der vollständigen digitalisierten Sammlungen (K10plus)
-Die Tabelle DigisamWinIBW schließlich enthält die Metadaten sämtlicher in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin verfügbaren Werke, d.h. sowohl Druckerzeugnisse als auch Manuskripte. Im Gegensatz zur modsinfo enthält dieser Datensatz aber nicht nur die Metadaten jener Werke, die geOCRt wurden und deren Volltexte in der Tabelle fulltext verfügbar gemacht wurden, sondern hier finden sich die Metadaten ALLER in den digitalisierten Sammlungen verfügbaren Werke. Die Datenquelle ist in diesem Fall auch nicht die digitalisierten Sammlungen, sondern, wie im Fall des ARK auch, der Gesamtkatalog K10plus. Daher ist dieser Datensatz auch deutlich umfangreicher, die Werke werden mit 267 Variablen beschrieben. Dieser Datensatz wurde für interne Recherchezwecke erstellt, liegt im .csv-Format vor und hat eine Größe von etwa 550 MB. Er wurde bislang nicht publiziert.
+Die Tabelle DigisamWinIBW schließlich enthält die Metadaten sämtlicher in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin verfügbaren Werke, d.h. sowohl Druckerzeugnisse als auch Manuskripte. Im Gegensatz zur modsinfo enthält dieser Datensatz aber nicht nur die Metadaten jener Werke, die geOCRt wurden und deren Volltexte in der Tabelle volltext verfügbar gemacht wurden, sondern hier finden sich die Metadaten ALLER in den digitalisierten Sammlungen verfügbaren Werke. Die Datenquelle ist in diesem Fall auch nicht die digitalisierten Sammlungen, sondern, wie im Fall des ARK auch, der Gesamtkatalog K10plus. Daher ist dieser Datensatz auch deutlich umfangreicher, die Werke werden mit 267 Variablen beschrieben. Dieser Datensatz wurde für interne Recherchezwecke erstellt, liegt im .csv-Format vor und hat eine Größe von etwa 550 MB. Er wurde bislang nicht publiziert.
 
