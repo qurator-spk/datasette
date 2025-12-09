@@ -6,7 +6,8 @@ Datenbanktabellen haben Spalten und Zeilen. Im Idealfall sind es \"tidy data\". 
 - Jede Variable bildet eine eigene Spalte
 - Jede Beobachtung bildet eine eigene Zeile
 - Jeder Typ einer beobachtbaren Einheit bildet eine Tabelle
-Anders als Exceltabellen können die Zellen von Datenbanktabellen nicht zusammengefasst oder formatiert werden.
+
+Anders als Exceltabellen können die Zellen von Datenbanktabellen nicht zusammengefasst oder formatiert werden.\
 Jede Spalte in einer Datenbanktabelle hat einen Typ. In SQLite können das *integer*, *real* oder *text* sein (für Gleitkommawerte), oder *blob* (für Binärdaten). Der Typ der Spalte ist wichtig, weil er sich darauf auswirkt, was passiert, wenn die Tabelle nach dieser Spalte sortiert wird, oder welche mathematischen Operationen für diese Werte verwendet werden können.
 
 Da SQLite-Datenbanken relational sind, kommt es vor, dass eine Spalte in einer Tabelle auf eine Spalte in einer anderen Tabelle verweist. In der angezeigten Tabelle werden diese Zellen dann als Links hervorgehoben. In einer Datenbank werden diese Links als \"Fremdschlüssel\" bezeichnet - sie funktionieren, indem sie die ID einer Zeile aus einer anderen Tabelle in einer speziellen Fremdschlüsselspalte speichern. Anhand von Fremdschlüsseln wird deutlich, warum relationale Datenbanken so viel leistungsfähiger sind als voneinander separierte Tabellen oder Datendateien, die in einem Format wie CSV gespeichert werden. 
@@ -35,8 +36,9 @@ Jede SQL-Abfrage enthält die drei Hauptbefehle `select` (engl. auswählen), `fr
 
 Beispiel-Abfragen:
 Aus der Tabelle Text soll der Volltext eines einzelnen Werks exportiert werden. Das Werk ist über die PPN (Pica Production Number) identifizierbar. Um den Volltext aller einzelnen Seiten zu erhalten, werden die Seiten aufsteigend sortiert.
-Abfrage: Zeige mir in der Tabelle Text das Werk mit der PPN 770575986 in der aufsteigenden Reihenfolge der Seiten an:
-select rowid, id, file_name, ppn, text from text where \"ppn\" = 770575986 order by file_name
+Abfrage: Zeige mir in der Tabelle volltext das Werk mit der PPN 770575986 in der aufsteigenden Reihenfolge der Seiten an:
+
+select rowid, id, filename, PPN, text from volltext where PPN = "PPN770575986" order by filename
 
 Jede Seite in Datasette ist so konzipiert, dass sie weitergegeben werden kann. Dazu kann man einfach die URL der Seite kopieren und dort einfügen, wo sie geteilt werden soll. Dies gilt auch für angewandte Filter und Facetten. Rohdaten in Datasette können im Format csv und .json exportiert werden. 
 
@@ -60,7 +62,7 @@ Eine dritte Datenbank (DigiSam-Win-IBW) enthält sämtliche Metadaten der in den
 
 Die vierte Datenbank (_memory) macht Abfragen über unterschiedliche Datenbanken hinweg möglich. Man kann also z.B. die DigiSam-Win-IBW gegen die ARK-MetaData über einen gemeinsamen Identifikator joinen.
 
-Die Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) enthält fast fünf Millionen Seiten Volltexte von 28.909 Werken. Die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) enthält Metadaten der von der Staatsbibliothek zu Berlin digitalisierten Werke. Die Tabelle [sprach_info]http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) enthält automatisch bestimmte Angaben zur Sprache auf jeder Volltextseite sowie zur Konfidenz dieser Angabe (Erwartungsbereich). Die Tabelle [volltext_mit_titel_und_ort](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext_mit_titel_und_ort) ermöglicht eine Visualisierung der Druckorte der digitalisierten Werte bzw. eine Recherche über Längen- und Breitengrade. Alle Tabellen enthalten eine Spalte mit Identifikatoren; hierfür wird die PPN genutzt, d.h die **P**ica **P**roduction **N**umber, die im deutschen Bibliothekssystem benutzt wird. PPNs sind eindeutige Identifikatoren, die auch für jedes Werk in den [Digitalisierten Sammlungen der Staatsbibliothek zu Berlin](https://digital.staatsbibliothek-berlin.de/) verwendet werden. Beispielsweise findet sich die PPN63354499X im Link zu diesem Werk https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN63354499X in den digitalisierten Sammlungen.
+Die Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) enthält fast fünf Millionen Seiten Volltexte von 28.909 Werken. Die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) enthält Metadaten der von der Staatsbibliothek zu Berlin digitalisierten Werke. Die Tabelle [sprach_info](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/sprach_info) enthält automatisch bestimmte Angaben zur Sprache auf jeder Volltextseite sowie zur Konfidenz dieser Angabe (Erwartungsbereich). Die Tabelle [volltext_mit_titel_und_ort](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext_mit_titel_und_ort) ermöglicht eine Visualisierung der Druckorte der digitalisierten Werte bzw. eine Recherche über Längen- und Breitengrade. Alle Tabellen enthalten eine Spalte mit Identifikatoren; hierfür wird die PPN genutzt, d.h die **P**ica **P**roduction **N**umber, die im deutschen Bibliothekssystem benutzt wird. PPNs sind eindeutige Identifikatoren, die auch für jedes Werk in den [Digitalisierten Sammlungen der Staatsbibliothek zu Berlin](https://digital.staatsbibliothek-berlin.de/) verwendet werden. Beispielsweise findet sich die PPN63354499X im Link zu diesem Werk https://digital.staatsbibliothek-berlin.de/werkansicht?PPN=PPN63354499X in den digitalisierten Sammlungen.
 
 Im folgenden werden Beispiele für SQL-Abfragen präsentiert, die es den Nutzenden ermöglichen sollen, die Logik dieser Abfragen zu verstehen und selbst SQL-Abfragen zu formulieren. Grundsätzlich sind die SQL-Queries in der Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) auszuführen. Die einzige Ausnahme bilden Suchen, die innerhalb der einzelnen Textseiten bzw. im ganzen Korpus ausgeführt werden; vergleiche dazu die Ausführungen unten.
 
@@ -202,11 +204,12 @@ order by PPN
 Für die Suche nach Begriffen oder Phrasen kann ausschließlich die Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) genutzt werden. Dort gibt es ein Suchfeld ("Search"), in das ein einzelnes oder mehrere Wörter eingegeben werden können. Wird eine bestimmte Phrase gesucht, muss diese durch Anführungszeichen umschlossen werden.
 
 **Beispiele:**
-Die Suche nach dem Begriff "Satrapen" (ohne Anführungszeichen) liefert 136 Zeilen, d.h. auf 136 Textseiten kommt dieser Begriff mindestens einmal vor. Die Suche mit den zwei Begriffen "Silbermünzen Satrapen" (ohne Anführungszeichen) liefert zwei Zeilen: PPN768209382 und PPN636879666, wobei die beiden Begriffe gemeinsam (aber unverbunden) auf einer Textseite vorkommen. Die Phrasensuche "Silbermünzen der Satrapen" (**MIT* Anführungszeichen) liefert nur eine Zeile (PPN636879666). 
+Die Suche nach dem Begriff "Satrapen" (ohne Anführungszeichen) liefert 136 Zeilen, d.h. auf 136 Textseiten kommt dieser Begriff mindestens einmal vor. Die Suche mit den zwei Begriffen "Silbermünzen Satrapen" (ohne Anführungszeichen) liefert zwei Zeilen: PPN768209382 und PPN636879666, wobei die beiden Begriffe gemeinsam (aber unverbunden) auf einer Textseite vorkommen. Die Phrasensuche "Silbermünzen der Satrapen" (**MIT** Anführungszeichen) liefert nur eine Zeile (PPN636879666). 
 
 
 **Wortteile:**
-Darüber hinaus kann auch nach Wortteilen gesucht werden. Dies geschieht über eine SQL-Query in der Datenbank [DigiSam](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam). Für die Suche wird der zu suchende Begriff mit Prozentzeichen % umschlossen; diese stehen für eine beliebige Folge von Zeichen, d.h. es werden ggf. auch Wortteile angezeigt:
+Darüber hinaus kann auch nach Wortteilen gesucht werden. Dies geschieht über eine SQL-Query in der Datenbank [DigiSam](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam). Für die Suche wird der zu suchende Begriff mit Prozentzeichen % umschlossen; diese stehen für eine beliebige Folge von Zeichen, d.h. es werden ggf. auch Wortteile angezeigt.
+
 SQL-Query zur Abfrage eines einzelnen Wort / eines Wortteils im Text:
 
 ```sql
@@ -225,7 +228,7 @@ where "text" like '%Diphteritis%'
 ```
 (180 Zeilen)
 
-SQL-Query nach mehreren Suchworten im Text, hier `"Diphteritis"` und `"Cholera"`
+SQL-Query nach mehreren Suchworten im Text, hier "Diphteritis" und "Cholera":
 
 ```sql
 select rowid, id, filename, PPN, text
@@ -234,7 +237,7 @@ where "text" like '%Diphteritis%' and "text" like '%Cholera%'
 ```
 (53 Zeilen, d.h. 53 Textseiten auf denen beiden Begriffe mindestens je einmal vorkommen)
 
-Der Unterschied zwischen beiden Suchmöglichkeiten wird an folgendem Beispiel deutlich:
+Der Unterschied zwischen beiden Suchmöglichkeiten wird an folgendem Beispiel deutlich: \
 Die unscharfe Suche nach dem Begriff "Diphtheritis" (ohne Anführungszeichen) in der Tabelle [volltext](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/volltext) liefert 786 Zeilen. 
 Die Suche nach dem Begriff '%Diphtheritis%' (mit Prozentzeichen) in der Datenbank [DigiSam](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam)
 
@@ -251,7 +254,7 @@ Anders als bei der ersten Suche sind hier weitere Begriffe mit eingeschlossen, b
 
 
 ### Textkorpus nach Publikationsdatum und Ort zusammenstellen
-Hierfür wird die Tabelle ["modsinfo"](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) genutzt, die Metadaten zum digitalisierten Werk enthält, wie etwa Publikationsdatum und -ort. 
+Hierfür wird die Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) genutzt, die Metadaten zum digitalisierten Werk enthält, wie etwa Publikationsdatum und -ort. 
 
 Die Abfrage nach einem Datum erfolgt über die Spalte **originInfo-publication0_dateIssued**, die nach einem Ort (z.B. Leipzig) in der Spalte **originInfo-publication0_place_placeTerm**
 
@@ -303,7 +306,7 @@ order by PPN
 ```
 (12 Zeilen)
 
-**Nun die obige Titelliste zusammen mit ihren Volltexten**
+**Nun die obige Titelliste zusammen mit ihren Volltexten**\
 Die Abfrage dieser Titel erfolgt über das Zusammenführen zweier Tabellen in einem **Join**. Dabei wird immer ein Datensatz aus der ersten Tabelle (modsinfo) mit einem Datensatz aus der zweiten Tabelle (volltext) zu einem neuen Datensatz zusammengesetzt. Das macht man natürlich nur für die Datensätze, die auch zusammen gehören, bei denen also der Wert des Primärschlüssels mit dem Wert des Fremdschlüssels übereinstimmt. Bei den digitalisierten Sammlungen ist es ratsam, die PPN als gemeinsamen Schlüssel zu verwenden. Die Gleichheit der beiden Werte wird durch eine entsprechende Bedingung in der where-Klausel ausgedrückt. In der from-Klausel muss man die beiden gewünschten Tabellen angeben. 
 
 **Beispielabfrage:** 
@@ -321,7 +324,7 @@ order by modsinfo.PPN
 
 ## Suche über Schlagworte
 
-Nicht alle Schlagwort-Spalten in der Metadaten-Tabelle \"[modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo)\" sind gleichmäßig gut gefüllt. Zur Verfügung stehen die Spalten \"genre-aad\", \"subject-EC1418_genre\", \"classification-ddc\" sowie \"classification-sbb\" und \"classificaton-ZVDD\". Die Spalte \"genre-aad\" entspricht dem von der Arbeitsgemeinschaft Alte Drucke im MARC-Feld hinterlegten Genre (\"Erzählung, Roman, Novelle, Medizin, Tagebuch, Briefsammlung\"); etwa ein Viertel aller Felder sind gefüllt. Die Spalte \"subject-EC1418_genre\" enthält die Genrebezeichnungen, die für das Projekt \"Europeana Collections 1914-1918: Remembering the First World War – a digital collection of outstanding sources from European national libraries\" angelegt wurden; diese Titel beziehen sich auschließlich auf den Ersten Weltkrieg. Hier finden sich rund 25.000 Einträge wie \"album, book, diary, photograph, poem, sheet music, song book, trench journal\". Die Spalte \"classification-ddc\" enthält Einträge mit einer Dewey Decimal Classification Nummer, z.B. 508 für \"Naturgeschichte\", 641 für \"Essen und Trinken\" oder 745 \"Dekorative Künste\"; hier sind etwa 10% der Felder befüllt. Die Spalte \"genre-marcgt\" enthält Genrebezeichnungen nach der MARC Genre Term List, z.B. \"Jugendbuch, Kinderbuch, Anthologie, Lesebuch, Biografie, Schulbuch\"; hier sind ebenfalls nur etwa 10% der Felder befüllt.
+Nicht alle Schlagwort-Spalten in der Metadaten-Tabelle [modsinfo](http://datasette.lx0246.sbb.spk-berlin.de/DigiSam/modsinfo) sind gleichmäßig gut gefüllt. Zur Verfügung stehen die Spalten \"genre-aad\", \"subject-EC1418_genre\", \"classification-ddc\" sowie \"classification-sbb\" und \"classificaton-ZVDD\". Die Spalte \"genre-aad\" entspricht dem von der Arbeitsgemeinschaft Alte Drucke im MARC-Feld hinterlegten Genre (\"Erzählung, Roman, Novelle, Medizin, Tagebuch, Briefsammlung\"); etwa ein Viertel aller Felder sind gefüllt. Die Spalte \"subject-EC1418_genre\" enthält die Genrebezeichnungen, die für das Projekt \"Europeana Collections 1914-1918: Remembering the First World War – a digital collection of outstanding sources from European national libraries\" angelegt wurden; diese Titel beziehen sich auschließlich auf den Ersten Weltkrieg. Hier finden sich rund 25.000 Einträge wie \"album, book, diary, photograph, poem, sheet music, song book, trench journal\". Die Spalte \"classification-ddc\" enthält Einträge mit einer Dewey Decimal Classification Nummer, z.B. 508 für \"Naturgeschichte\", 641 für \"Essen und Trinken\" oder 745 \"Dekorative Künste\"; hier sind etwa 10% der Felder befüllt. Die Spalte \"genre-marcgt\" enthält Genrebezeichnungen nach der MARC Genre Term List, z.B. \"Jugendbuch, Kinderbuch, Anthologie, Lesebuch, Biografie, Schulbuch\"; hier sind ebenfalls nur etwa 10% der Felder befüllt.
 
 **Beispielabfragen:** 
 
@@ -421,7 +424,7 @@ and "classification-ZVDD" = "Historische Drucke, Sprachen / Literaturen"
 
 ### Umfang der Werke
 
-In der Spalte mets_fileSec_fileGrp-FULLTEXT-count finden sich Angaben dazu, wie viele Seiten Volltext vorliegen. Daher kann nach dem Umfang der Werke gefiltert werden.
+In der Spalte **mets_fileSec_fileGrp-FULLTEXT-count** finden sich Angaben dazu, wie viele Seiten Volltext vorliegen. Daher kann nach dem Umfang der Werke gefiltert werden. Besonderheit: Zuerst muss die Spalte **mets_fileSec_fileGrp-FULLTEXT-count** vom *character*-Format ins *integer*-Format konvertiert werden.
 
 Beispielabfrage: Alle Werke mit mehr als 699 Seiten
 
@@ -461,8 +464,8 @@ Welche Bücher wurden gemäß [Geo-Koordinaten](https://geohack.toolforge.org/ge
 select rowid, PPN, file, text, latitude, longitude
 from volltext_mit_titel_und_ort
 where "latitude" = "31.166666666667" and "longitude" = "121.46666666667"
+order by PPN, file;
 ```
-
 (mehr als 1.500 Ergebnisse)
 
 # Datenanalyse und Bibliometrie
@@ -612,7 +615,7 @@ order by Häufigkeit desc
 ```
 (mehr als 1.500 Zeilen)
 
-Alternative Abfrage des Feldes \"originInfo-publication0_place_placeTerm-normalised\", dort finden sich die normalisierten Ortsnamen
+Alternative: Abfrage des Feldes **originInfo-publication0_place_placeTerm-normalised**, dort finden sich die normalisierten Ortsnamen
 
 ### Publikationsjahr
 **Abfrage Häufigkeiten Werke pro Publikationsjahr, Ausgabe in absteigender Reihenfolge der Häufigkeit**
