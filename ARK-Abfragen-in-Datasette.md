@@ -2,7 +2,7 @@
 Die ARK-Metadaten-Tabelle ist hier zu erreichen (nur intern über SPK-VPN):
 http://datasette.lx0246.sbb.spk-berlin.de/ARK-MetaData
 
-In neuem Tab: Wie lauten alle Spaltennamen?
+Hilfreiche Abfrage: Wie lauten alle Spaltennamen?
 http://datasette.lx0246.sbb.spk-berlin.de/ARK-MetaData/ark_metadata?sql=SELECT+*+FROM+ark_metadata+WHERE+1%3D0
 
 ## Eine erste SQL-Abfrage
@@ -31,7 +31,7 @@ order by Häufigkeit desc;
 2283231 nan
 
 
-## Anzahl belegter und leerer Felder in einer Spalte \
+## Anzahl belegter und leerer Felder in einer Spalte
 Wieviele leere Felder ("nan") gibt es in einer bestimmten Spalte?
 
 ```sql
@@ -146,7 +146,7 @@ where "Lokale Notationen 6011" <> 'nan' and "Bibliografische Gattung und Status 
 295
 
 
-## Suche mir die Digitalisate eines bestimmten oder mehrerer Notationsbereiche
+## Suche die Digitalisate eines bestimmten oder mehrerer Notationsbereiche
 ```sql
 SELECT "Pica-Produktionsnummer 0100", "Bibliografische Gattung und Status 0500", "Erscheinungsdatum/Entstehungsdatum 1100", "URL zum Volltext 4950", "Lesesaalsystematik der SBB 6210", "Lesesaalsystematik der SBB 6211"
 FROM ark_metadata
@@ -159,7 +159,7 @@ WHERE
 ```
 4 Treffer 
 
-## Wieviele A- und O-Aufnahmen gibt? Nach Feld Bibliografische Gattung und Status 0500
+## Wieviele A- und O-Aufnahmen gibt? Nach Feld "Bibliografische Gattung und Status 0500"
 
 ```sql
 select [Bibliografische Gattung und Status 0500] as BBG, count([Bibliografische Gattung und Status 0500]) as Häufigkeit
@@ -188,7 +188,6 @@ where
   OR "Lesesaalsystematik der SBB 6210" like '%Uq 1324 - Uq 2068/68%'
   OR "Lesesaalsystematik der SBB 6211" like '%Uq 1324 - Uq 2068/68%'
  ```
- 
 Das gewählte Beispiel "Neger · Sklavenhandel" (relevant für den Kolonialismus) weist nur zwei darunterliegende Ebenen auf, es werden 139 Treffer angezeigt.
 Auf https://ark.staatsbibliothek-berlin.de/index.php?recherche=002.015.006.019.005&ACT=&IKT=&TX=&SET=&NSI=SYS#ebene=94941,100807,146865,146872 werden aktuell (24.09.2025) 142 Titel angezeigt, was leider nicht korrekt ist. \
 Titelanzahl rücküberprüfen in der WinIBW: \
@@ -241,8 +240,8 @@ from ark_metadata
 group by "Lesesaalsystematik der SBB 6213";
 ```
 
-## Titel, in denen in 6010 dasselbe steht wie in 6211 \
-Die Abfrage wird grundsätzlich so formuliert:
+## Titel, in denen in 6010 dasselbe steht wie in 6211 
+Diese Abfrage wird grundsätzlich so formuliert:
 
 ```sql
 select "Pica-Produktionsnummer 0100", "Lokale Notationen 6010", "Lesesaalsystematik der SBB 6211"
@@ -273,3 +272,4 @@ from ark_metadata
 group by "Lesesaalsystematik der SBB 6210"
 order by Häufigkeit desc;
 ```
+
