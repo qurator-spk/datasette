@@ -764,14 +764,14 @@ Sie finden sich hier [auf dem GitHub-Repositorium des Referats IDM4](https://git
 
 # Anhang Erläuterungen zu den Datenquellen
 
-Die in datasette verfügbar gemachten Daten stammen aus einer Reihe verschiedener Quellen. 
+Die in datasette verfügbar gemachten Daten stammen aus einer Reihe verschiedener Quellen. Im weiteren Text wird eine kurze Information zu jeder Quelle geliefert; eine ausführliche [Beschreibung der Datenstrukturen findet sich hier](https://github.com/qurator-spk/datasette/blob/main/Datenstrukturen.md).
 
 ## Volltexte
 Die Tabellen volltext und sprach_info entstammen aus einer auf Zenodo publizierten sqlite-Datenbank, die ALLE Volltexte enthält, die in den digitalisierten Sammlungen der Staatsbibliothek zu Berlin zum 21. August 2019 verfügbar waren. Die Informationen zu Sprachen und Entropie wurden am 1. März 2023 hinzugefügt. Die Größe der sqlite-Datei beträgt etwa 15,8 GB, in der Datasette-Instanz belegt sie ca. 40 GB.  
 
 Diese Volltexte wurden durch die Implementierung einer optischen Zeichenerkennung (OCR) digitalisierter Bücher gewonnen. In den digitalisierten Sammlungen der Staatsbibliothek zu Berlin (SBB) können die Volltexte manuell (Werk für Werk) heruntergeladen werden. Die Veröffentlichung eines Datensatzes mit etwa 5 Millionen OCR-Seiten erleichtert prinzipiell den Zugang zu den Volltexten sowie ihre Nutzung z.B. zum Training von machine learning-Modellen. 
 
-Der Datensatz wurde 2023 unter [https://doi.org/10.5281/zenodo.7716097](https://doi.org/10.5281/zenodo.7716097) publiziert.
+Der Datensatz wurde im März 2023 unter der DOI [https://doi.org/10.5281/zenodo.7716097](https://doi.org/10.5281/zenodo.7716097) publiziert.
 
 
 ## Metadaten (Auszug aus den digitalisierte Sammlungen)
